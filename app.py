@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
-#Apka12
-#Ap
+
 st.set_page_config(page_title="Aplikacja Ratownictwa", page_icon="🚑", layout="wide")
 
 conn = sqlite3.connect('database.db')
