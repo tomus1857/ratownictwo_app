@@ -1,0 +1,170 @@
+import streamlit as st
+import pandas as pd
+import sqlite3
+import time
+from math import radians, cos, sin, sqrt, atan2
+import folium
+from streamlit.components.v1 import html
+
+# Konfiguracja aplikacji Streamlit
+st.set_page_config(page_title="Aplikacja Ratownictwa", page_icon="?", layout="wide")
+
+# Połączenie z bazą danych SQLite
+conn = sqlite3.connect('database.db')
+c = conn.cursor()
+
+
+# Funkcja do tworzenia tabeli messages
+def create_table():
+    try:
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                user TEXT, 
+                message TEXT
+            )
+        ''')
+        conn.commit()
+    except Exception as e:
+        st.error(f"Błąd przy tworzeniu tabeli: {e}")
+
+
+# Funkcja do dodawania wiadomości do tabeli messages
+def add_message(user, message):
+    try:
+        c.execute('INSERT INTO messages (user, message) VALUES (?, ?)', (user, message))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Błąd przy dodawaniu wiadomości: {e}")
+
+
+# Funkcja do pobierania wszystkich wiadomości z tabeli messages
+def get_messages():
+    try:
+        c.execute('SELECT * FROM messages')
+        data = c.fetchall()
+        return data
+    except Exception as e:
+        st.error(f"Błąd przy pobieraniu wiadomości: {e}")
+        return []
+
+
+# Utwórz tabelę messages
+create_table()
+
+# Tytuł aplikacji
+st.title("Aplikacja wspierająca zespoły ratownictwa")
+
+# Przykładowe dane do mapy
+if 'lat' not in st.session_state:
+    st.session_state['lat'] = 54.6160  # Szerokość geograficzna Wejherowa
+if 'lon' not in st.session_state:
+    st.session_state['lon'] = 18.2453  # Długość geograficzna Wejherowa
+if 'moving' not in st.session_state:
+    st.session_state['moving'] = False  # Flaga oznaczająca, czy czerwona kropka się porusza
+if 'blue_dot_visible' not in st.session_state:
+    st.session_state['blue_dot_visible'] = True  # Flaga widoczności niebieskiej kropki
+if 'returning' not in st.session_state:
+    st.session_state['returning'] = False  # Flaga oznaczająca, czy czerwona kropka wraca na swoje miejsce
+
+# Pozycja niebieskiej kropki
+blue_dot_lat = 54.6220
+blue_dot_lon = 18.2390
+
+# Stała wartość przesunięcia
+lat_step = 0.0001  # Przykładowa stała wartość przesunięcia szerokości geograficznej
+lon_step = 0.0001  # Przykładowa stała wartość przesunięcia długości geograficznej
+
+# Funkcja do tworzenia mapy z kolorowymi markerami
+def create_map(lat, lon, blue_visible):
+    st.subheader("Lokalizacja zespołów ratownictwa")
+    # Utworzenie mapy
+    m = folium.Map(location=[lat, lon], zoom_start=15)
+    # Dodanie czerwonego markera
+    folium.Marker(
+        location=[lat, lon],
+        popup="Zespół Ratownictwa",
+        icon=folium.Icon(color='red')
+    ).add_to(m)
+    # Dodanie niebieskiego markera, jeśli jest widoczny
+    if blue_visible:
+        folium.Marker(
+            location=[blue_dot_lat, blue_dot_lon],
+            popup="Niebieska kropka",
+            icon=folium.Icon(color='blue')
+        ).add_to(m)
+    # Zapisz mapę do HTML
+    map_html = m._repr_html_()
+    # Wyświetlenie mapy
+    html(map_html, height=600)
+
+
+# Funkcja interfejsu czatu
+def chat_interface():
+    st.subheader("Komunikator")
+    if 'user' not in st.session_state:
+        st.session_state['user'] = ''
+    if st.session_state['user'] == '':
+        st.session_state['user'] = st.text_input("Wprowadź swoje imię", key="username_input")
+    else:
+        st.text(f"Witaj, {st.session_state['user']}!")
+        with st.form(key='chat_form', clear_on_submit=True):
+            user_message = st.text_input("Twoja wiadomość", key="message_input")
+            submit_button = st.form_submit_button(label='Wyślij')
+            if submit_button and user_message:
+                add_message(st.session_state['user'], user_message)
+        messages = get_messages()
+        for message in messages:
+            st.write(f"{message[1]}: {message[2]}")
+
+
+# Podziel interfejs na dwie kolumny
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("Pomoc"):
+        st.session_state['moving'] = True
+    map_placeholder = st.empty()
+with col2:
+    chat_interface()
+
+
+# Aktualizacja lokalizacji bez migania
+def update_location():
+    initial_lat = 54.6160
+    initial_lon = 18.2453
+
+    while st.session_state['moving'] or st.session_state['returning']:
+        if st.session_state['moving']:
+            if abs(blue_dot_lat - st.session_state['lat']) > lat_step:
+                st.session_state['lat'] += lat_step if blue_dot_lat > st.session_state['lat'] else -lat_step
+            if abs(blue_dot_lon - st.session_state['lon']) > lon_step:
+                st.session_state['lon'] += lon_step if blue_dot_lon > st.session_state['lon'] else -lon_step
+            # Sprawdzenie odległości między kropkami
+            if abs(blue_dot_lat - st.session_state['lat']) <= lat_step and abs(blue_dot_lon - st.session_state['lon']) <= lon_step:
+                st.session_state['blue_dot_visible'] = False
+                st.session_state['moving'] = False
+                st.session_state['returning'] = True
+        elif st.session_state['returning']:
+            if abs(initial_lat - st.session_state['lat']) > lat_step:
+                st.session_state['lat'] += lat_step if initial_lat > st.session_state['lat'] else -lat_step
+            if abs(initial_lon - st.session_state['lon']) > lon_step:
+                st.session_state['lon'] += lon_step if initial_lon > st.session_state['lon'] else -lon_step
+            # Sprawdzenie odległości do początkowego miejsca
+            if abs(initial_lat - st.session_state['lat']) <= lat_step and abs(initial_lon - st.session_state['lon']) <= lon_step:
+                st.session_state['returning'] = False
+
+        with map_placeholder.container():
+            create_map(st.session_state['lat'], st.session_state['lon'], st.session_state['blue_dot_visible'])
+
+        time.sleep(1)
+        st.experimental_rerun()
+
+
+if st.session_state['moving'] or st.session_state['returning']:
+    update_location()
+else:
+    with map_placeholder.container():
+        create_map(st.session_state['lat'], st.session_state['lon'], st.session_state['blue_dot_visible'])
+
+# Zamknij połączenie z bazą danych
+conn.close()
