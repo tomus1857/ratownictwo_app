@@ -1,1 +1,4 @@
 sujczynka/
+.vscode/
+__pycache__/
+venv/
