@@ -6,13 +6,10 @@ import time
 import random
 import uuid
 import streamlit.components.v1 as components
-<<<<<<< HEAD
 from math import radians, cos, sin, sqrt, atan2
 import folium as F
 from streamlit.components.v1 import html
 import openrouteservice as ors
-=======
->>>>>>> 0d75eed47280c414a868a98b01480b41c348d3fd
 
 # Konfiguracja strony Streamlit
 st.set_page_config(page_title="Aplikacja Ratownictwa", page_icon="🚑", layout="wide")
@@ -49,7 +46,6 @@ create_table()
 # Tytuł aplikacji
 st.title("Aplikacja wspierająca zespoły ratownictwa")
 
-<<<<<<< HEAD
 # Funkcja do generowania odpowiedzi czatbota
 def generate_bot_response(user_message, conversation_state):
     user_message = user_message.lower()
@@ -79,50 +75,6 @@ def generate_bot_response(user_message, conversation_state):
 
     return response, conversation_state
 
-=======
-# Dane do wyświetlania na mapie
-data = pd.DataFrame({
-    'lat': [37.7749, 34.0522, 40.7128, 51.5074, 48.8566],
-    'lon': [-122.4194, -118.2437, -74.0060, -0.1278, 2.3522],
-    'name': ['San Francisco', 'Los Angeles', 'New York', 'London', 'Paris'],
-    'description': ['Zespół 1', 'Zespół 2', 'Zespół 3', 'Zespół 4', 'Zespół 5']
-})
-
-# Funkcja do wyświetlania mapy z lokalizacją zespołów ratownictwa
-def create_map(data):
-    st.subheader("Lokalizacja zespołów ratownictwa")
-    st.map(data)
-
-# Funkcja do generowania odpowiedzi czatbota
-def generate_bot_response(user_message, conversation_state):
-    user_message = user_message.lower()
-    response = "Dziękujemy za Twoją wiadomość. Pracujemy nad rozwiązaniem problemu."
-
-    if conversation_state == 'initial':
-        if 'pomoc' in user_message:
-            response = "Ile osób potrzebuje pomocy? (Proszę podać liczbę)"
-            conversation_state = 'num_people'
-        elif 'awaria' in user_message:
-            response = "Proszę opisać problem."
-            conversation_state = 'awaiting_issue_description'
-    elif conversation_state == 'num_people':
-        if user_message.isdigit():
-            response = "Proszę opisać stan poszkodowanych. Czy są przytomni? Czy oddychają? Jakie obrażenia zauważyłeś?"
-            conversation_state = 'describe_condition'
-        else:
-            response = "Proszę podać liczbę osób potrzebujących pomocy."
-    elif conversation_state == 'describe_condition':
-        # Generowanie losowego czasu przybycia zespołów ratowniczych
-        arrival_time = random.randint(15, 45)  # Losowy czas przybycia w minutach (od 15 do 45)
-        response = f"Zespoły ratownictwa są w drodze. Przybliżony czas przybycia: {arrival_time} minut. Czy mogę w czymś jeszcze pomóc?"
-        conversation_state = 'final'
-    elif conversation_state == 'awaiting_issue_description':
-        response = "Zgłoszenie zostało przyjęte. Zespoły ratownictwa są w drodze. Przybliżony czas przybycia zostanie określony. Czy mogę w czymś jeszcze pomóc?"
-        conversation_state = 'final'
-
-    return response, conversation_state
-
->>>>>>> 0d75eed47280c414a868a98b01480b41c348d3fd
 # Funkcja do interfejsu komunikatora
 def chat_interface():
     st.subheader("Komunikator")
@@ -219,7 +171,6 @@ def chat_interface():
                     if time.time() >= details['show_time']:
                         st.write(f"*Wyświetlono o {formatted_time}*")
 
-<<<<<<< HEAD
 # Przykładowe dane do mapy
 START_LAT = 54.6160  # Szerokość geograficzna Wejherowa
 START_LON = 18.2453  # Długość geograficzna Wejherowa
@@ -287,13 +238,10 @@ def add_route(source, destination):
 
 
 
-=======
->>>>>>> 0d75eed47280c414a868a98b01480b41c348d3fd
 # Rozdzielenie interfejsu na dwie kolumny: mapę i komunikator
 col1, col2 = st.columns(2)
 
 with col1:
-<<<<<<< HEAD
     mode = st.radio("Wybierz tryb transportu", ("Helikopter", "Karetka"))
 
 if mode == "Helikopter":
@@ -390,12 +338,5 @@ else:
 
 
 
-=======
-    create_map(data)  # Ensure the map is always rendered
-
-with col2:
-    chat_interface()  # Ensure the chat interface is always rendered
-
->>>>>>> 0d75eed47280c414a868a98b01480b41c348d3fd
 # Zamknięcie połączenia z bazą danych SQLite
 conn.close()
